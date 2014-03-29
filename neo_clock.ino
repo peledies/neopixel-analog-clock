@@ -1,7 +1,13 @@
 #include <Adafruit_NeoPixel.h>
 
-#define N_LEDS 12
+#define N_LEDS 60
 #define PIN    1
+
+// Increase Brightness
+#define SWITCH 0
+
+// Decrease Brightness
+#define SWITCH2 2
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(N_LEDS, PIN, NEO_GRB + NEO_KHZ800);
 
@@ -11,42 +17,67 @@ int seconds = 0;             // variable
 int minutes = 0;             // variable
 int hours = 0;
 
+int brightness = 16;
+int partialBrightness = brightness-brightness/4;
 void setup() {
+  // initialize the SWITCH pins as inputs.
+  pinMode(SWITCH, INPUT);
+  pinMode(SWITCH2, INPUT);
+  // ...with a pullup
+  digitalWrite(SWITCH, HIGH);
+  digitalWrite(SWITCH2, HIGH);
   strip.begin();
 }
 
 void loop() {
   int j;
-  uint32_t blue = strip.Color(0, 0, 16);
-  uint32_t red  = strip.Color(16, 0, 0);
-  uint32_t green  = strip.Color(0, 16, 0);
-  uint32_t teal  = strip.Color(0, 12, 12);
-  uint32_t yellow  = strip.Color(12, 12, 0); 
-  uint32_t purple  = strip.Color(12, 0, 12);
-  uint32_t white  = strip.Color(12, 12, 12);
-  
   masterClock ++;        // with each clock rise add 1 to masterclock count
-  if(masterClock == 1599) // 8mHz reached or 1 seccond elapsed 
+  
+  // Brightness Adjuster
+  if(masterClock == 400 || masterClock == 800 || masterClock == 1200 || masterClock == 1599){  
+    if (! digitalRead(SWITCH2)){
+      if(brightness > 1){
+        brightness = brightness -1;
+      }
+    }
+    if (! digitalRead(SWITCH)){
+      if(brightness < 255){
+        brightness = brightness +1;
+      }
+    }
+  }
+  // End Brightness Adjuster
+
+  partialBrightness = brightness-brightness/4;
+  uint32_t blue = strip.Color(0, 0, brightness);
+  uint32_t red  = strip.Color(brightness, 0, 0);
+  uint32_t green  = strip.Color(0, brightness, 0);
+  uint32_t teal  = strip.Color(0, partialBrightness, partialBrightness);
+  uint32_t yellow  = strip.Color(partialBrightness, partialBrightness, 0); 
+  uint32_t purple  = strip.Color(partialBrightness, 0, partialBrightness);
+  uint32_t white  = strip.Color(partialBrightness, partialBrightness, partialBrightness);
+  
+
+  if(masterClock == 295) // 8mHz reached or 1 seccond elapsed 
   {                         
     seconds ++;          // after one 8mHz cycle add 1 second ;)
     masterClock = 0;     // Reset after 1 second is reached
   }
-   
-  if(seconds == 12)
+  if(seconds == N_LEDS)
   {
     minutes ++;          // increment minutes by 1
     seconds = 0;         // reset the seconds variable
   }
-  if(minutes == 12)
+  if(minutes == N_LEDS)
   {
     hours ++;            // increment hours by 1
     minutes = 0;         // reset the minutes variable
   }
-  if(hours == 12)
+  if(hours == N_LEDS)
   {
     hours = 0;            // reset the hours variable
   }
-  for(j=0; j<= 12; j++) strip.setPixelColor(j, 0);
+  for(j=0; j<= N_LEDS; j++) strip.setPixelColor(j, 0);
   if(minutes == hours && seconds == hours){
     strip.setPixelColor(seconds, white);
   }else if(seconds == minutes){
