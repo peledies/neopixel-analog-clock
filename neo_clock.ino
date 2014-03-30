@@ -11,6 +11,7 @@
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(N_LEDS, PIN, NEO_GRB + NEO_KHZ800);
 
+int trim = 510;              // frequency trim (higher number == slower second speed)
 int clockInt = 0;            // digital pin 2 is now interrupt 0
 int masterClock = 0;         // counts rising edge clock signals
 int seconds = 0;             // variable
@@ -33,8 +34,13 @@ void loop() {
   int j;
   masterClock ++;        // with each clock rise add 1 to masterclock count
   
-  // Brightness Adjuster
-  if(masterClock == 400 || masterClock == 800 || masterClock == 1200 || masterClock == 1599){  
+  if(masterClock == trim/4 || masterClock == trim/3 || masterClock == trim/2 || masterClock == trim){
+    // Time Adjuster
+    if(!digitalRead(SWITCH2) && !digitalRead(SWITCH)){
+       minutes = minutes+1;
+    }
+    // END Time Adjuster
+    // Brightness Adjuster
     if (! digitalRead(SWITCH2)){
       if(brightness > 1){
         brightness = brightness -1;
@@ -45,9 +51,9 @@ void loop() {
         brightness = brightness +1;
       }
     }
+    // End Brightness Adjuster
   }
-  // End Brightness Adjuster
-
+  
   partialBrightness = brightness-brightness/4;
   uint32_t blue = strip.Color(0, 0, brightness);
   uint32_t red  = strip.Color(brightness, 0, 0);
@@ -58,7 +64,7 @@ void loop() {
   uint32_t white  = strip.Color(partialBrightness, partialBrightness, partialBrightness);
   
 
-  if(masterClock == 295) // 8mHz reached or 1 seccond elapsed 
+  if(masterClock == trim) // 8mHz reached or 1 seccond elapsed 
   {                         
     seconds ++;          // after one 8mHz cycle add 1 second ;)
     masterClock = 0;     // Reset after 1 second is reached
@@ -77,7 +83,8 @@ void loop() {
   {
     hours = 0;            // reset the hours variable
   }
-  for(j=0; j<= N_LEDS; j++) strip.setPixelColor(j, 0);
+
+  // light the appropriate LED's
   if(minutes == hours && seconds == hours){
     strip.setPixelColor(seconds, white);
   }else if(seconds == minutes){
@@ -94,6 +101,17 @@ void loop() {
     strip.setPixelColor(seconds, blue);
     strip.setPixelColor(minutes, red);
     strip.setPixelColor(hours, green);
+  }
+  
+  //clear old seconds place unless it is being used by hours or minutes
+  if(seconds-1 != hours && seconds-1 != minutes){
+    strip.setPixelColor(seconds-1, 0);
+  }
+  if(minutes-1 != seconds && minutes-1 != hours){
+    strip.setPixelColor(minutes-1, 0);
+  }
+  if(hours-1 != minutes && hours-1 != seconds){
+    strip.setPixelColor(hours-1, 0);
   }
   strip.show();
 }
